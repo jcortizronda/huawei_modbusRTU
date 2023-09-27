@@ -1,0 +1,1093 @@
+esphome:
+  name: huawei-inverter
+  friendly_name: huawei-inverter
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret huawei-inverter-encryption
+
+ota:
+  password: !secret huawei-inverter-ota
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Huawei-Inverter Fallback Hotspot"
+    password: !secret huawei-inverter-fallback
+
+captive_portal:
+
+switch:
+  - platform: restart
+    name: "Restart"
+
+uart:
+  id: mod_bus
+  baud_rate: 9600
+  tx_pin: GPIO17  # TX2
+  rx_pin: GPIO18  # RX2
+  rx_buffer_size: 1024
+  data_bits: 8
+  stop_bits: 1
+  parity: NONE
+
+modbus:
+  id: modbus1
+
+modbus_controller:
+  - id: huawei_inverter
+    address: 0x1
+    modbus_id: modbus1
+    setup_priority: -10
+    command_throttle: 750ms
+    update_interval: 15s
+
+text_sensor:
+  # Range 30000 - 30035
+  - name: "Info Model"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 30000
+    register_count: 15
+    response_size: 30
+    skip_updates: 200
+  - name: "Info Serial Number"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 30015
+    register_count: 10
+    response_size: 20
+    skip_updates: 200
+  - name: "Info Part Number"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 30025
+    register_count: 10
+    response_size: 20
+    skip_updates: 200
+
+  # Inverter status string
+  - name: "Status"
+    platform: template
+    id: inverter_status_string
+    icon: "mdi:information"
+
+
+binary_sensor:
+  # Range 32000 - 32019 (1/2)
+  # Register 32000
+  - name: "State Standby"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32000
+    bitmask: 0x001
+  - name: "State Grid-Connection"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32000
+    bitmask: 0x002
+  - name: "State Grid-Connecttion normally"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32000
+    bitmask: 0x004
+  - name: "State Grid-Connecttion with derating due to power rationing"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32000
+    bitmask: 0x008
+  - name: "State Grid-Connecttion with derating due to internal causes of inverter"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32000
+    bitmask: 0x010
+  - name: "State normal stop"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32000
+    bitmask: 0x020
+  - name: "State stop due to faults"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32000
+    bitmask: 0x040
+  - name: "State stop due to power rationing"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32000
+    bitmask: 0x080
+  - name: "State shutdown"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32000
+    bitmask: 0x100
+  - name: "State spot check"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32000
+    bitmask: 0x200
+  # Register 32002
+  - name: "State unlocked"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32002
+    bitmask: 0x1
+  - name: "State PV connected"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32002
+    bitmask: 0x2
+  - name: "State DSP data collection"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32002
+    bitmask: 0x4
+  # Register 32003
+  - name: "State off-grid"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32003
+    bitmask: 0x1
+  - name: "State off-grid switch enable"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32003
+    bitmask: 0x2
+  # Register 32008
+  - name: "Alarm High String Input Voltage"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0001
+  - name: "Alarm DC Arc Fault"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0002
+  - name: "Alarm String Reverse Connection"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0004
+  - name: "Alarm String Current Backfeed"
+    icon: "mdi:comment-alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0008
+  - name: "Alarm Abnormal String Power"
+    icon: "mdi:comment-alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0010
+  - name: "Alarm AFCI Self-Check Fail"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0020
+  - name: "Alarm Phase Wire Short-Circuited to PE"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0040
+  - name: "Alarm Grid Loss"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0080
+  - name: "Alarm Grid Undervoltage"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0100
+  - name: "Alarm Grid Overvoltage"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0200
+  - name: "Alarm Grid Volt. Imbalance"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0400
+  - name: "Alarm Grid Overfrequency"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x0800
+  - name: "Alarm Grid Underfrequency"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x1000
+  - name: "Alarm Unstable Grid Frequency"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x2000
+  - name: "Alarm Output Overcurrent"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x4000
+  - name: "Alarm Output DC Component Overhigh"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32008
+    bitmask: 0x8000
+  # Register 32009
+  - name: "Alarm Abnormal Residual Current"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0001
+  - name: "Alarm Abnormal Grounding"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0002
+  - name: "Alarm Low Insulation Resistance"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0004
+  - name: "Alarm Overtemperature"
+    icon: "mdi:alert-circle"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0008
+  - name: "Alarm Device Fault"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0010
+  - name: "Alarm Upgrade Failed or Version Mismatch"
+    icon: "mdi:alert-circle"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0020
+  - name: "Alarm License Expired"
+    icon: "mdi:comment-alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0040
+  - name: "Alarm Faulty Monitoring Unit"
+    icon: "mdi:alert-circle"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0080
+  - name: "Alarm Faulty Power Collector"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0100
+  - name: "Alarm Battery abnormal"
+    icon: "mdi:alert-circle"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0200
+  - name: "Alarm Active Islanding"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0400
+  - name: "Alarm Passive Islanding"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x0800
+  - name: "Alarm Transient AC Overvoltage"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x1000
+  - name: "Alarm Peripheral port short circuit"
+    icon: "mdi:comment-alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x2000
+  - name: "Alarm Churn output overload"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x4000
+  - name: "Alarm Abnormal PV module configuration"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32009
+    bitmask: 0x8000
+  # Register 32010
+  - name: "Alarm Optimizer fault"
+    icon: "mdi:comment-alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0001
+  - name: "Alarm Built-in PID operation abnormal"
+    icon: "mdi:alert-circle"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0002
+  - name: "Alarm High input string voltage to ground"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0004
+  - name: "Alarm External Fan Abnormal"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0008
+  - name: "Alarm Battery Reverse Connection"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0010
+  - name: "Alarm On-grid/Off-grid controller abnormal"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0020
+  - name: "Alarm PV String Loss"
+    icon: "mdi:comment-alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0040
+  - name: "Alarm Internal Fan Abnormal"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0080
+  - name: "Alarm DC Protection Unit Abnormal"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0100
+  - name: "Alarm EL Unit Abnormal"
+    icon: "mdi:alert-circle"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0200
+  - name: "Alarm Active Adjustment Instruction Abnormal"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0400
+  - name: "Alarm Reactive Adjustment Instruction Abnormal"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x0800
+  - name: "Alarm CT Wiring Abnormal"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x1000
+  - name: "Alarm DC Arc Fault (ADMC Alarm to be clear manually)"
+    icon: "mdi:alert"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32010
+    bitmask: 0x2000
+
+  # Range 37100 - 37125 (1/2) - Meter
+  - name: "Meter Status"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37100
+    bitmask: 0x01
+  - name: "Meter Type 3-phase"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37125
+    bitmask: 0x01
+    disabled_by_default: true
+
+sensor:
+  # Range 30070 - 30075
+  - name: "Info Number of strings"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 30071
+    value_type: U_WORD
+    skip_updates: 240
+    disabled_by_default: true
+  - name: "Info Rated Power"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 30073
+    value_type: U_DWORD
+    skip_updates: 240
+    unit_of_measurement: "kW"
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+  - name: "Info Maximum Active Power"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 30075
+    value_type: U_DWORD
+    skip_updates: 240
+    unit_of_measurement: "kW"
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+
+  # Range 32000 - 32019 (2/2)
+  # Registers 32016 - 32019
+  - name: "PV1 Voltage"
+    id: pv1_voltage
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32016
+    value_type: S_WORD
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+  - name: "PV1 Current"
+    id: pv1_current
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32017
+    value_type: S_WORD
+    skip_updates: 4
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+  - name: "PV2 Voltage"
+    id: pv2_voltage
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32018
+    value_type: S_WORD
+    skip_updates: 4
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+    disabled_by_default: true
+  - name: "PV2 Current"
+    id: pv2_current
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32019
+    value_type: S_WORD
+    skip_updates: 4
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+    disabled_by_default: true
+    on_value:
+      - sensor.template.publish:
+          id: pv1_power
+          state: !lambda 'return id(pv1_current).state * id(pv1_voltage).state / 1000;'
+      - sensor.template.publish:
+          id: pv2_power
+          state: !lambda 'return id(pv2_current).state * id(pv2_voltage).state / 1000;'
+      - sensor.template.publish:
+          id: string_ratio
+          state: !lambda 'return (id(pv2_current).state * id(pv2_voltage).state) / (id(pv1_current).state * id(pv1_voltage).state);'
+
+  # Templates of range 32016 - 32019
+  - name: "PV1 Power"
+    platform: template
+    id: pv1_power
+    icon: mdi:flash
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 2
+  - name: "PV2 Power"
+    platform: template
+    id: pv2_power
+    icon: mdi:flash
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 2
+    disabled_by_default: true
+  - name: "String Ratio"
+    platform: template
+    id: string_ratio
+    icon: mdi:solar-panel-large
+    state_class: measurement
+    unit_of_measurement: ""
+    accuracy_decimals: 3
+    disabled_by_default: true
+
+  # Range 32064 - 32114 (2/2)
+  - name: "Input Power"
+    icon: "mdi:solar-power"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32064
+    value_type: S_DWORD
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+  - name: "Grid Voltage"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32066
+    value_type: U_WORD
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+      - throttle_average: 60s
+  - name: "Grid Current"
+    id: inverter_current
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32072
+    value_type: S_DWORD
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+  - name: "Peak Power today"
+    icon: "mdi:solar-power"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32078
+    value_type: S_DWORD
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+  - name: "Active Power"
+    id: inverter_active_power
+    icon: "mdi:solar-power"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32080
+    value_type: S_DWORD
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+  - name: "Grid Frequency"
+    icon: "mdi:sine-wave"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32085
+    value_type: U_WORD
+    unit_of_measurement: "Hz"
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+      - throttle_average: 60s
+  - name: "Efficiency"
+    register_type: holding
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    address: 32086
+    value_type: U_WORD
+    unit_of_measurement: "%"
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+  - name: "Internal Temperature"
+    register_type: holding
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    address: 32087
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.1
+      - throttle_average: 60s
+  - name: "Insulation Resistance"
+    icon: "mdi:omega"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32088
+    value_type: U_WORD
+    unit_of_measurement: "Mohm"
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+  - name: "Device Status Code"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32089
+    value_type: U_WORD
+    on_value:
+      - text_sensor.template.publish:
+          id: inverter_status_string
+          state: !lambda |-
+            int code = (int)x;
+            switch (code) {
+              case 0x0000:
+              return {"Standby: initializing"};
+              case 0x0001:
+              return {"Standby: detecting insulation resistance"};
+              case 0x0002:
+              return {"Standby: detecting irradiation"};
+              case 0x0003:
+              return {"Standby: grid detecting"};
+              case 0x0100:
+              return {"Starting"};
+              case 0x0200:
+              return {"On-grid (Off-grid mode: running)"};
+              case 0x0201:
+              return {"Grid connection: power limited (Off-grid mode: running: power limited)"};
+              case 0x0202:
+              return {"Grid connection: self-derating (Off-grid mode: running: self-derating"};
+              case 0x0203:
+              return {"Off-grid Running"};
+              case 0x0300:
+              return {"Shutdown: fault"};
+              case 0x0301:
+              return {"Shutdown: command"};
+              case 0x0302:
+              return {"Shutdown: OVGR"};
+              case 0x0303:
+              return {"Shutdown: communication disconnected"};
+              case 0x0304:
+              return {"Shutdown: power limited"};
+              case 0x0305:
+              return {"Shutdown: manual startup required"};
+              case 0x0306:
+              return {"Shutdown: DC switches disconnected"};
+              case 0x0307:
+              return {"Shutdown: rapid cutoff"};
+              case 0x0308:
+              return {"Shutdown: input underpower"};
+              case 0x0401:
+              return {"Grid scheduling: cosφ-P curve"};
+              case 0x0402:
+              return {"Grid scheduling: Q-U curve"};
+              case 0x0403:
+              return {"Grid scheduling: PF-U curve"};
+              case 0x0404:
+              return {"Grid scheduling: dry contact"};
+              case 0x0405:
+              return {"Grid scheduling: Q-P curve"};
+              case 0x0500:
+              return {"Spot-check ready"};
+              case 0x0501:
+              return {"Spot-checking"};
+              case 0x0600:
+              return {"Inspecting"};
+              case 0x0700:
+              return {"AFCI self check"};
+              case 0x0800:
+              return {"I-V scanning"};
+              case 0x0900:
+              return {"DC input detection"};
+              case 0x0A00:
+              return {"Running: off-grid charging"};
+              case 0xA000:
+              return {"Standby: no irradiation"};
+              default:
+              return {"Unknown state code"};
+            }
+  - name: "Device Fault Code"
+    icon: "mdi:alert-circle"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32090
+    value_type: U_WORD
+  - name: "Startup Time"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32091
+    value_type: U_DWORD
+    device_class: timestamp
+  - name: "Shutdown Time timestamp"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32093
+    value_type: U_DWORD
+    device_class: timestamp
+  - name: "Accumulated Energy"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32106
+    value_type: U_DWORD
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+  - name: "Daily Energy"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32114
+    value_type: U_DWORD
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+
+  # Range 37100 - 37125 (2/2) - Meter
+  - name: "Meter Grid Voltage"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37101
+    value_type: S_DWORD
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.1
+      - throttle_average: 60s
+  - name: "Meter Grid Current"
+    id: meter_current
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37107
+    value_type: S_DWORD
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.01
+    on_value:
+      - sensor.template.publish:
+          id: house_current
+          state: !lambda |-
+            float inv_current = id(inverter_current).state;
+            if (inv_current > x) {
+              return inv_current - x;
+            } else {
+              return NAN;
+            };
+  - name: "Meter Active Power"
+    id: meter_power
+    icon: "mdi:transmission-tower-export"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37113
+    value_type: S_DWORD
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+    on_value:
+      - lambda: |-
+          float solar_power = id(inverter_active_power).state;  // generated power
+          float grid_power = x;  // power exported to the grid
+          float house_power = NAN;
+          float solar_to_house_power = NAN;
+          float grid_to_house_power = NAN;
+          float solar_to_grid_power = NAN;
+
+          // If exporting more than generating something is wrong
+          if (grid_power > solar_power) {
+            house_power = NAN;
+          } else {
+            house_power = solar_power - grid_power;
+
+            // If exporting power
+            if (grid_power >= 0) {
+              solar_to_house_power = house_power;
+              grid_to_house_power = 0;
+              solar_to_grid_power = grid_power;
+
+            // else importing power
+            } else {
+              solar_to_house_power = solar_power;
+              grid_to_house_power = -grid_power;
+              solar_to_grid_power = 0;
+            };
+          };
+
+          id(house_active_power).publish_state(house_power);
+          id(solar_to_house).publish_state(solar_to_house_power);
+          id(grid_to_house).publish_state(grid_to_house_power);
+          id(solar_to_grid).publish_state(solar_to_grid_power);
+
+
+  - name: "Meter Grid Frequency"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37118
+    value_type: S_WORD
+    unit_of_measurement: "Hz"
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+      - throttle_average: 60s
+  - name: "Meter Exported Energy"
+    id: meter_exported_energy
+    icon: "mdi:transmission-tower-export"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37119
+    value_type: S_DWORD
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+  - name: "Meter Imported Energy"
+    id: meter_imported_energy
+    icon: "mdi:transmission-tower-import"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37121
+    value_type: S_DWORD
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+    on_value:
+      - sensor.template.publish:
+          id: net_balance
+          state: !lambda 'return id(meter_exported_energy).state - x;'
+  - name: "Meter House Current"
+    id: house_current
+    platform: template
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 3
+  - name: "Meter House Power"
+    platform: template
+    id: house_active_power
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+  - name: "Meter House Energy"
+    platform: template
+    id: net_balance
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 2
+
+  # Templates for power flow
+  - name: "Power solar to house"
+    platform: template
+    id: solar_to_house
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+  - name: "Power grid to house"
+    platform: template
+    id: grid_to_house
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+  - name: "Power solar to grid"
+    platform: template
+    id: solar_to_grid
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
