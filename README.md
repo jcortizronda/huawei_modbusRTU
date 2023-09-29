@@ -52,7 +52,7 @@ You will need the following elements:
 1) PCB ModbusRTU Interface soldered
 2) 3D Enclosure (modbusPCB_Part_A, modbusPCB_Part_B and din_clip)
 3) 4x Screws M3x12 (for enclosure mounting)
-4) 4x Screws M3x6 or M3x8 (for din clip mounting)
+4) 4x Screws M3x6 (for din clip mounting)
 
 # Wiring
 
