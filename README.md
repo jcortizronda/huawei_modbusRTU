@@ -17,6 +17,8 @@ The benefits of this integration are:
 * Doing some basic monitoring of the solar yield of each of your strings (string ratio)
 * Get notified when something goes wrong in your inverter
 
+You can see images of real product in [images](images/) folder
+
 <img src="images/modbusRTU_interface.jpg" width="400">
 
 # PCB
