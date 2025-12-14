@@ -51,8 +51,8 @@ modbus_controller:
     address: 0x1
     modbus_id: modbus1
     setup_priority: -10
-    command_throttle: 750ms
-    update_interval: 15s
+    command_throttle: 100ms
+    update_interval: 5s
 
 text_sensor:
   # Range 30000 - 30035
@@ -1043,10 +1043,6 @@ sensor:
     accuracy_decimals: 2
     filters:
       - multiply: 0.01
-    on_value:
-      - sensor.template.publish:
-          id: net_balance
-          state: !lambda 'return id(meter_exported_energy).state - x;'
   - name: "Meter House Current"
     id: house_current
     platform: template
@@ -1062,12 +1058,15 @@ sensor:
     state_class: measurement
     accuracy_decimals: 3
   - name: "Meter House Energy"
-    platform: template
-    id: net_balance
+    platform: integration
+    id: house_energy_kwh
+    sensor: house_active_power 
+    time_unit: h
     unit_of_measurement: "kWh"
     device_class: energy
     state_class: total_increasing
     accuracy_decimals: 2
+    restore: true  # Save value if ESP32 reboots
 
   # Templates for power flow
   - name: "Power solar to house"
