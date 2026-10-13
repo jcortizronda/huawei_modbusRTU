@@ -727,4 +727,434 @@ sensor:
     address: 32078
     value_type: S_DWORD
     unit_of_measurement: "kW"
-    device_class
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+  - name: "Active Power"
+    id: inverter_active_power
+    icon: "mdi:solar-power"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32080
+    value_type: S_DWORD
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+  - name: "Grid Frequency"
+    icon: "mdi:sine-wave"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32085
+    value_type: U_WORD
+    unit_of_measurement: "Hz"
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+      - throttle_average: 60s
+  - name: "Efficiency"
+    register_type: holding
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    address: 32086
+    value_type: U_WORD
+    unit_of_measurement: "%"
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+  - name: "Internal Temperature"
+    register_type: holding
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    address: 32087
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.1
+      - throttle_average: 60s
+  - name: "Insulation Resistance"
+    icon: "mdi:omega"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32088
+    value_type: U_WORD
+    unit_of_measurement: "Mohm"
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+  - name: "Device Status Code"
+    icon: "mdi:information"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32089
+    value_type: U_WORD
+    on_value:
+      - text_sensor.template.publish:
+          id: inverter_status_string
+          state: !lambda |-
+            int code = (int)x;
+            switch (code) {
+              case 0x0000:
+              return {"Standby: initializing"};
+              case 0x0001:
+              return {"Standby: detecting insulation resistance"};
+              case 0x0002:
+              return {"Standby: detecting irradiation"};
+              case 0x0003:
+              return {"Standby: grid detecting"};
+              case 0x0100:
+              return {"Starting"};
+              case 0x0200:
+              return {"On-grid (Off-grid mode: running)"};
+              case 0x0201:
+              return {"Grid connection: power limited (Off-grid mode: running: power limited)"};
+              case 0x0202:
+              return {"Grid connection: self-derating (Off-grid mode: running: self-derating"};
+              case 0x0203:
+              return {"Off-grid Running"};
+              case 0x0300:
+              return {"Shutdown: fault"};
+              case 0x0301:
+              return {"Shutdown: command"};
+              case 0x0302:
+              return {"Shutdown: OVGR"};
+              case 0x0303:
+              return {"Shutdown: communication disconnected"};
+              case 0x0304:
+              return {"Shutdown: power limited"};
+              case 0x0305:
+              return {"Shutdown: manual startup required"};
+              case 0x0306:
+              return {"Shutdown: DC switches disconnected"};
+              case 0x0307:
+              return {"Shutdown: rapid cutoff"};
+              case 0x0308:
+              return {"Shutdown: input underpower"};
+              case 0x0401:
+              return {"Grid scheduling: cosφ-P curve"};
+              case 0x0402:
+              return {"Grid scheduling: Q-U curve"};
+              case 0x0403:
+              return {"Grid scheduling: PF-U curve"};
+              case 0x0404:
+              return {"Grid scheduling: dry contact"};
+              case 0x0405:
+              return {"Grid scheduling: Q-P curve"};
+              case 0x0500:
+              return {"Spot-check ready"};
+              case 0x0501:
+              return {"Spot-checking"};
+              case 0x0600:
+              return {"Inspecting"};
+              case 0x0700:
+              return {"AFCI self check"};
+              case 0x0800:
+              return {"I-V scanning"};
+              case 0x0900:
+              return {"DC input detection"};
+              case 0x0A00:
+              return {"Running: off-grid charging"};
+              case 0xA000:
+              return {"Standby: no irradiation"};
+              default:
+              return {"Unknown state code"};
+            }
+  - name: "Device Fault Code"
+    icon: "mdi:alert-circle"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32090
+    value_type: U_WORD
+  - name: "Startup Time"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32091
+    value_type: U_DWORD
+    device_class: timestamp
+  - name: "Shutdown Time timestamp"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 32093
+    value_type: U_DWORD
+    device_class: timestamp
+  - name: "Accumulated Energy"
+    platform: modbus_controller
+    modbus_controller_id: huawei_slow
+    register_type: holding
+    address: 32106
+    value_type: U_DWORD
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+      - lambda: |-
+          static float last = NAN;
+          static int rechazos = 0;
+          // 0x7FFFFFFF (21474836.47 kWh) = dato no valido del inversor
+          if (x > 1000000.0f) {
+            ESP_LOGW("huawei", "Accumulated: dato no valido %.2f", x);
+            return {};
+          }
+          if (!isnan(last) && (x < last - 0.1f || x - last > 50.0f)) {
+            if (++rechazos < 20) {
+              ESP_LOGW("huawei", "Accumulated: descartada %.2f (anterior %.2f)", x, last);
+              return {};
+            }
+            ESP_LOGW("huawei", "Accumulated: nueva referencia %.2f tras %d rechazos", x, rechazos);
+          }
+          rechazos = 0;
+          last = x;
+          return x;
+  - name: "Daily Energy"
+    platform: modbus_controller
+    modbus_controller_id: huawei_slow
+    register_type: holding
+    address: 32114
+    value_type: U_DWORD
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+      - lambda: |-
+          static float last = NAN;
+          // 0x7FFFFFFF (21474836.47 kWh) = dato no valido del inversor
+          if (x > 1000000.0f) {
+            ESP_LOGW("huawei", "Daily Energy: dato no valido %.2f", x);
+            return {};
+          }
+          if (!isnan(last) && x - last > 50.0f) {
+            ESP_LOGW("huawei", "Daily Energy descartada: %.2f (anterior %.2f)", x, last);
+            return {};
+          }
+          last = x;
+          return x;
+
+  # Range 37100 - 37125 (2/2) - Meter
+  - name: "Meter Grid Voltage"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37101
+    value_type: U_DWORD
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.1
+      - throttle_average: 60s
+  - name: "Meter Grid Current"
+    id: meter_current
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37107
+    value_type: S_DWORD
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.01
+    on_value:
+      - sensor.template.publish:
+          id: house_current
+          state: !lambda |-
+            float inv_current = id(inverter_current).state;
+            if (inv_current > x) {
+              return inv_current - x;
+            } else {
+              return NAN;
+            };
+  - name: "Meter Active Power"
+    id: meter_power
+    icon: "mdi:transmission-tower-export"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37113
+    value_type: S_DWORD
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+    on_value:
+      - lambda: |-
+          float solar_power = id(inverter_active_power).state;  // generated power
+          float grid_power = x;  // power exported to the grid
+          float house_power = NAN;
+          float solar_to_house_power = NAN;
+          float grid_to_house_power = NAN;
+          float solar_to_grid_power = NAN;
+
+          // If exporting more than generating something is wrong
+          if (grid_power > solar_power || solar_power - grid_power > 15.0f) {
+            house_power = NAN;
+          } else {
+            house_power = solar_power - grid_power;
+
+            // If exporting power
+            if (grid_power >= 0) {
+              solar_to_house_power = house_power;
+              grid_to_house_power = 0;
+              solar_to_grid_power = grid_power;
+
+            // else importing power
+            } else {
+              solar_to_house_power = solar_power;
+              grid_to_house_power = -grid_power;
+              solar_to_grid_power = 0;
+            };
+          };
+
+          id(house_active_power).publish_state(house_power);
+          id(solar_to_house).publish_state(solar_to_house_power);
+          id(grid_to_house).publish_state(grid_to_house_power);
+          id(solar_to_grid).publish_state(solar_to_grid_power);
+
+
+  - name: "Meter Grid Frequency"
+    platform: modbus_controller
+    modbus_controller_id: huawei_inverter
+    register_type: holding
+    address: 37118
+    value_type: U_WORD
+    unit_of_measurement: "Hz"
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+      - throttle_average: 60s
+  - name: "Meter Exported Energy"
+    id: meter_exported_energy
+    icon: "mdi:transmission-tower-export"
+    platform: modbus_controller
+    modbus_controller_id: huawei_slow
+    register_type: holding
+    address: 37119
+    value_type: U_DWORD
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+      - lambda: |-
+          static float last = NAN;
+          static int rechazos = 0;
+          // 0x7FFFFFFF (21474836.47 kWh) = dato no valido del inversor
+          if (x > 1000000.0f) {
+            ESP_LOGW("huawei", "Exported: dato no valido %.2f", x);
+            return {};
+          }
+          if (!isnan(last) && (x < last - 0.1f || x - last > 50.0f)) {
+            if (++rechazos < 20) {
+              ESP_LOGW("huawei", "Exported: descartada %.2f (anterior %.2f)", x, last);
+              return {};
+            }
+            ESP_LOGW("huawei", "Exported: nueva referencia %.2f tras %d rechazos", x, rechazos);
+          }
+          rechazos = 0;
+          last = x;
+          return x;
+  - name: "Meter Imported Energy"
+    id: meter_imported_energy
+    icon: "mdi:transmission-tower-import"
+    platform: modbus_controller
+    modbus_controller_id: huawei_slow
+    register_type: holding
+    address: 37121
+    value_type: U_DWORD
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+      - lambda: |-
+          static float last = NAN;
+          static int rechazos = 0;
+          // 0x7FFFFFFF (21474836.47 kWh) = dato no valido del inversor
+          if (x > 1000000.0f) {
+            ESP_LOGW("huawei", "Imported: dato no valido %.2f", x);
+            return {};
+          }
+          if (!isnan(last) && (x < last - 0.1f || x - last > 50.0f)) {
+            if (++rechazos < 20) {
+              ESP_LOGW("huawei", "Imported: descartada %.2f (anterior %.2f)", x, last);
+              return {};
+            }
+            ESP_LOGW("huawei", "Imported: nueva referencia %.2f tras %d rechazos", x, rechazos);
+          }
+          rechazos = 0;
+          last = x;
+          return x;
+  - name: "Meter House Current"
+    id: house_current
+    platform: template
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 3
+  - name: "Meter House Power"
+    platform: template
+    id: house_active_power
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+  - name: "Meter House Energy"
+    platform: integration
+    id: house_energy_kwh
+    sensor: house_active_power
+    time_unit: h
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 2
+    restore: true  # Save value if ESP32 reboots
+  # Templates for power flow
+  - name: "Power solar to house"
+    platform: template
+    id: solar_to_house
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+  - name: "Power grid to house"
+    platform: template
+    id: grid_to_house
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
+  - name: "Power solar to grid"
+    platform: template
+    id: solar_to_grid
+    unit_of_measurement: "kW"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 3
